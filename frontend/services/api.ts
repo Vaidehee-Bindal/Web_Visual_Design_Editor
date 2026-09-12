@@ -1,5 +1,5 @@
-export type ElementType = 'rectangle' | 'circle' | 'text';
-export type CanvasElement = { id: string; type: ElementType; x: number; y: number; width?: number; height?: number; radius?: number; rotation: number; fill: string; text?: string; fontSize?: number };
+export type ElementType = 'rectangle' | 'circle' | 'text' | 'line' | 'curve';
+export type CanvasElement = { id: string; type: ElementType; x: number; y: number; width?: number; height?: number; radius?: number; rotation: number; fill: string; stroke?: string; strokeWidth?: number; opacity?: number; points?: number[]; text?: string; fontSize?: number; fontFamily?: string; fontStyle?: 'normal' | 'bold' | 'italic' | 'bold italic'; textDecoration?: 'none' | 'underline'; align?: 'left' | 'center' | 'right' };
 export type CanvasDocument = { _id?: string; name: string; width: number; height: number; elements: CanvasElement[]; updatedAt?: string; createdAt?: string };
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 async function request<T>(path: string, options?: RequestInit): Promise<T> { const response = await fetch(`${API}${path}`, { headers: { 'Content-Type': 'application/json' }, ...options }); if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.error || 'Request failed'); } return response.status === 204 ? (undefined as T) : response.json(); }

@@ -2,10 +2,11 @@ import mongoose from 'mongoose';
 
 const elementSchema = new mongoose.Schema({
   id: { type: String, required: true },
-  type: { type: String, enum: ['rectangle', 'circle', 'text'], required: true },
+  type: { type: String, enum: ['rectangle', 'circle', 'text', 'line', 'curve'], required: true },
   x: { type: Number, required: true }, y: { type: Number, required: true },
   width: Number, height: Number, radius: Number, rotation: { type: Number, default: 0 },
-  fill: { type: String, required: true }, text: String, fontSize: Number,
+  fill: { type: String, required: true }, stroke: String, strokeWidth: Number, opacity: Number, points: [Number],
+  text: String, fontSize: Number, fontFamily: String, fontStyle: String, textDecoration: String, align: String,
 }, { _id: false, strict: true });
 
 const canvasSchema = new mongoose.Schema({
