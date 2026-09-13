@@ -1,2 +1,79 @@
-import type { CanvasElement } from '../services/api';
-export default function CanvasThumbnail({ elements, width, height }: { elements: CanvasElement[]; width: number; height: number }) { return <svg style={{ width: '100%', height: '100%', display: 'block' }} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-label="Canvas preview">{elements.map((element) => { const common = { key: element.id, opacity: element.opacity ?? 1, transform: `translate(${element.x} ${element.y}) rotate(${element.rotation})` }; if (element.type === 'circle') return <circle {...common} cx="0" cy="0" r={element.radius || 20} fill={element.fill} />; if (element.type === 'rectangle') return <rect {...common} width={element.width || 80} height={element.height || 50} rx="8" fill={element.fill} />; if (element.type === 'line' || element.type === 'curve') return <polyline {...common} points={(element.points || []).reduce((out, value, index, points) => index % 2 ? `${out} ${points[index - 1]},${value}` : out, '')} fill="none" stroke={element.stroke || element.fill} strokeWidth={element.strokeWidth || 4} strokeLinecap="round" />; return <text {...common} fontFamily={element.fontFamily || 'Arial'} fontSize={element.fontSize || 20} fontWeight={(element.fontStyle || '').includes('bold') ? '700' : '400'} fontStyle={(element.fontStyle || '').includes('italic') ? 'italic' : 'normal'} textDecoration={element.textDecoration || 'none'} fill={element.fill}>{element.text}</text>; })}</svg>; }
+import type { CanvasElement } from "../services/api";
+export default function CanvasThumbnail({
+  elements,
+  width,
+  height,
+}: {
+  elements: CanvasElement[];
+  width: number;
+  height: number;
+}) {
+  return (
+    <svg
+      style={{ width: "100%", height: "100%", display: "block" }}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      aria-label="Canvas preview"
+    >
+      {elements.map((element) => {
+        const common = {
+          key: element.id,
+          opacity: element.opacity ?? 1,
+          transform: `translate(${element.x} ${element.y}) rotate(${element.rotation})`,
+        };
+        if (element.type === "circle")
+          return (
+            <circle
+              {...common}
+              cx="0"
+              cy="0"
+              r={element.radius || 20}
+              fill={element.fill}
+            />
+          );
+        if (element.type === "rectangle")
+          return (
+            <rect
+              {...common}
+              width={element.width || 80}
+              height={element.height || 50}
+              rx="8"
+              fill={element.fill}
+            />
+          );
+        if (element.type === "line" || element.type === "curve")
+          return (
+            <polyline
+              {...common}
+              points={(element.points || []).reduce(
+                (out, value, index, points) =>
+                  index % 2 ? `${out} ${points[index - 1]},${value}` : out,
+                "",
+              )}
+              fill="none"
+              stroke={element.stroke || element.fill}
+              strokeWidth={element.strokeWidth || 4}
+              strokeLinecap="round"
+            />
+          );
+        return (
+          <text
+            {...common}
+            fontFamily={element.fontFamily || "Arial"}
+            fontSize={element.fontSize || 20}
+            fontWeight={
+              (element.fontStyle || "").includes("bold") ? "700" : "400"
+            }
+            fontStyle={
+              (element.fontStyle || "").includes("italic") ? "italic" : "normal"
+            }
+            textDecoration={element.textDecoration || "none"}
+            fill={element.fill}
+          >
+            {element.text}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}

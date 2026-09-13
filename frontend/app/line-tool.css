@@ -1,14 +1,109 @@
-.line-tool-wrap{position:relative;display:flex;align-items:stretch}
-.line-tool-button{display:grid;place-items:center;gap:2px;min-width:52px;border:1px solid transparent;background:transparent;border-radius:7px 0 0 7px;color:#514b5c;padding:9px 6px;font:12px inherit;cursor:pointer}
-.line-tool-button:hover,.line-tool-toggle:hover{background:var(--soft);color:var(--ink)}
-.line-tool-icon{font-size:22px;line-height:16px;color:#1689ed}
-.line-tool-button small{font-size:10px}
-.line-tool-toggle{border:1px solid transparent;border-left:0;background:transparent;border-radius:0 7px 7px 0;color:#514b5c;padding:0 4px;cursor:pointer}
-.line-style-menu{position:absolute;z-index:10;top:calc(100% + 6px);left:0;display:grid;gap:4px;padding:9px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 24px #39304d1c}
-.line-style-menu button{display:grid;place-items:center;width:48px;height:48px;border:1px solid transparent;background:#fff;border-radius:10px;color:#201d29;font-size:25px;cursor:pointer}
-.line-style-menu button:hover{border-color:#8b5cf6;background:#f3edff;color:#6d43d4}
-.autosave-toggle{display:flex;align-items:center;gap:7px;border:0;background:transparent;color:#6b6672;padding:4px 2px;font:11px inherit;cursor:pointer}
-.autosave-switch{position:relative;display:inline-block;width:38px;height:20px;border:2px solid #b9b7bd;border-radius:11px;background:#fff;transition:.15s}
-.autosave-switch i{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#77757a;transition:.15s}
-.autosave-toggle.on .autosave-switch{border-color:var(--purple);background:#fff}
-.autosave-toggle.on .autosave-switch i{left:20px;background:var(--purple)}
+.line-tool-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+.line-tool-button {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  min-width: 52px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 7px 0 0 7px;
+  color: #514b5c;
+  padding: 9px 6px;
+  font: 12px inherit;
+  cursor: pointer;
+}
+.line-tool-button:hover,
+.line-tool-toggle:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+.line-tool-icon {
+  font-size: 22px;
+  line-height: 16px;
+  color: #1689ed;
+}
+.line-tool-button small {
+  font-size: 10px;
+}
+.line-tool-toggle {
+  border: 1px solid transparent;
+  border-left: 0;
+  background: transparent;
+  border-radius: 0 7px 7px 0;
+  color: #514b5c;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.line-style-menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  gap: 4px;
+  padding: 9px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px #39304d1c;
+}
+.line-style-menu button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid transparent;
+  background: #fff;
+  border-radius: 10px;
+  color: #201d29;
+  font-size: 25px;
+  cursor: pointer;
+}
+.line-style-menu button:hover {
+  border-color: #8b5cf6;
+  background: #f3edff;
+  color: #6d43d4;
+}
+.autosave-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: #6b6672;
+  padding: 4px 2px;
+  font: 11px inherit;
+  cursor: pointer;
+}
+.autosave-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 20px;
+  border: 2px solid #b9b7bd;
+  border-radius: 11px;
+  background: #fff;
+  transition: 0.15s;
+}
+.autosave-switch i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #77757a;
+  transition: 0.15s;
+}
+.autosave-toggle.on .autosave-switch {
+  border-color: var(--purple);
+  background: #fff;
+}
+.autosave-toggle.on .autosave-switch i {
+  left: 20px;
+  background: var(--purple);
+}

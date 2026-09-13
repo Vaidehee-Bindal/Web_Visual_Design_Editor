@@ -1,4 +1,65 @@
-import type { CanvasDocument } from '../../services/api';
-import CanvasThumbnail from '../CanvasThumbnail';
-type Props = { canvases: CanvasDocument[]; activeId?: string; onLoad: (id: string) => void; onDelete: (id: string) => void };
-export default function CanvasList({ canvases, activeId, onLoad, onDelete }: Props) { return <section className="saved-section"><div className="saved-heading"><div><span className="eyebrow">Workspace</span><h2>Saved canvases</h2></div><span className="count-pill">{canvases.length}</span></div>{canvases.length === 0 ? <p className="muted">Your saved designs will appear here.</p> : <div className="canvas-list">{canvases.map((canvas, index) => { const canvasId = canvas.localId || canvas._id || `canvas-${index}`; return <div className={`canvas-card ${activeId === canvasId ? 'active' : ''}`} key={canvasId} onClick={() => onLoad(canvasId)}><div className="canvas-thumb"><CanvasThumbnail elements={canvas.elements || []} width={canvas.width} height={canvas.height} /></div><div className="canvas-meta"><strong>{canvas.name}</strong><small>{canvas.width} × {canvas.height}</small></div><button className="remove-canvas" onClick={(e) => { e.stopPropagation(); onDelete(canvasId); }}>×</button></div>; })}</div>}</section>; }
+import type { CanvasDocument } from "../../services/api";
+import CanvasThumbnail from "../CanvasThumbnail";
+type Props = {
+  canvases: CanvasDocument[];
+  activeId?: string;
+  onLoad: (id: string) => void;
+  onDelete: (id: string) => void;
+};
+export default function CanvasList({
+  canvases,
+  activeId,
+  onLoad,
+  onDelete,
+}: Props) {
+  return (
+    <section className="saved-section">
+      <div className="saved-heading">
+        <div>
+          <span className="eyebrow">Workspace</span>
+          <h2>Saved canvases</h2>
+        </div>
+        <span className="count-pill">{canvases.length}</span>
+      </div>
+      {canvases.length === 0 ? (
+        <p className="muted">Your saved designs will appear here.</p>
+      ) : (
+        <div className="canvas-list">
+          {canvases.map((canvas, index) => {
+            const canvasId = canvas.localId || canvas._id || `canvas-${index}`;
+            return (
+              <div
+                className={`canvas-card ${activeId === canvasId ? "active" : ""}`}
+                key={canvasId}
+                onClick={() => onLoad(canvasId)}
+              >
+                <div className="canvas-thumb">
+                  <CanvasThumbnail
+                    elements={canvas.elements || []}
+                    width={canvas.width}
+                    height={canvas.height}
+                  />
+                </div>
+                <div className="canvas-meta">
+                  <strong>{canvas.name}</strong>
+                  <small>
+                    {canvas.width} × {canvas.height}
+                  </small>
+                </div>
+                <button
+                  className="remove-canvas"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(canvasId);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}

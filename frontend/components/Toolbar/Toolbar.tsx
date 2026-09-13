@@ -1,11 +1,178 @@
-import { useEffect, useState } from 'react';
-import type { ElementType } from '../../services/api';
-import Dropdown from '../Dropdown/Dropdown';
-type Props = { onSave: () => void; onExport: () => void; onUndo: () => void; onRedo: () => void; onZoom: (zoom: number) => void; zoom: number; canUndo: boolean; canRedo: boolean; saving: boolean; autosave: boolean; onToggleAutosave: () => void; onAdd?: (type: ElementType) => void; onNew?: () => void; onFullscreen?: () => void };
-const zoomOptions = [{ value: 0.6, label: '60%' }, { value: 0.8, label: '80%' }, { value: 1, label: '100%' }, { value: 1.2, label: '120%' }];
-export default function Toolbar({ onSave, onExport, onUndo, onRedo, onZoom, zoom, canUndo, canRedo, saving, autosave, onToggleAutosave }: Props) {
-  const [signedIn, setSignedIn] = useState(false); const [authOpen, setAuthOpen] = useState(false); const [email, setEmail] = useState(''); const [fullscreen, setFullscreen] = useState(false);
-  useEffect(() => { const sync = () => setFullscreen(Boolean(document.fullscreenElement)); document.addEventListener('fullscreenchange', sync); sync(); return () => document.removeEventListener('fullscreenchange', sync); }, []);
-  const toggleFullscreen = async () => { try { if (document.fullscreenElement) await document.exitFullscreen?.(); else await document.documentElement.requestFullscreen?.(); } catch { setFullscreen(Boolean(document.fullscreenElement)); } };
-  return <><header className="toolbar"><div className="brand"><span className="brand-mark">✦</span><span>canvasly</span></div><div className="toolbar-actions"><button className="icon-button" disabled={!canUndo} onClick={onUndo} title="Undo (Ctrl+Z)">↶</button><button className="icon-button" disabled={!canRedo} onClick={onRedo} title="Redo (Ctrl+Y)">↷</button><Dropdown className="zoom-dropdown" value={zoom} options={zoomOptions} onChange={onZoom} ariaLabel="Zoom" /><button className={autosave ? 'autosave-toggle on' : 'autosave-toggle'} onClick={onToggleAutosave} title={'AutoSave ' + (autosave ? 'on' : 'off')}><span>AutoSave</span><span className="autosave-switch"><i /></span></button><button className="icon-button" onClick={() => void toggleFullscreen()} title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>{fullscreen ? '↙' : '⛶'}</button><button className="subtle-button" onClick={onExport}>⇩ Export PNG</button><button className="save-button" onClick={onSave}>{saving ? 'Saving…' : 'Save Canvas'} <span>↗</span></button>{signedIn ? <button className="avatar signed-in" onClick={() => setSignedIn(false)}>V</button> : <button className="account-button" onClick={() => setAuthOpen(true)}>Sign in</button>}</div></header>{authOpen && <div className="auth-backdrop" onClick={() => setAuthOpen(false)}><form className="auth-card" onSubmit={event => { event.preventDefault(); if (email.trim()) { setSignedIn(true); setAuthOpen(false); } }} onClick={event => event.stopPropagation()}><button type="button" className="auth-close" onClick={() => setAuthOpen(false)}>×</button><span className="eyebrow">Canvasly account</span><h2>Welcome back</h2><p>Sign in to keep your canvases available across sessions.</p><label>Email<input type="email" required value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" /></label><label>Password<input type="password" required placeholder="••••••••" /></label><button className="save-button" type="submit">Sign in</button><small>Authentication UI is ready; connect your auth provider when accounts are enabled.</small></form></div>}</>;
+import { useEffect, useState } from "react";
+import type { ElementType } from "../../services/api";
+import Dropdown from "../Dropdown/Dropdown";
+type Props = {
+  onSave: () => void;
+  onExport: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  onZoom: (zoom: number) => void;
+  zoom: number;
+  canUndo: boolean;
+  canRedo: boolean;
+  saving: boolean;
+  autosave: boolean;
+  onToggleAutosave: () => void;
+  onAdd?: (type: ElementType) => void;
+  onNew?: () => void;
+  onFullscreen?: () => void;
+};
+const zoomOptions = [
+  { value: 0.6, label: "60%" },
+  { value: 0.8, label: "80%" },
+  { value: 1, label: "100%" },
+  { value: 1.2, label: "120%" },
+];
+export default function Toolbar({
+  onSave,
+  onExport,
+  onUndo,
+  onRedo,
+  onZoom,
+  zoom,
+  canUndo,
+  canRedo,
+  saving,
+  autosave,
+  onToggleAutosave,
+}: Props) {
+  const [signedIn, setSignedIn] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    const sync = () => setFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", sync);
+    sync();
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen?.();
+      else await document.documentElement.requestFullscreen?.();
+    } catch {
+      setFullscreen(Boolean(document.fullscreenElement));
+    }
+  };
+  return (
+    <>
+      <header className="toolbar">
+        <div className="brand">
+          <span className="brand-mark">✦</span>
+          <span>canvasly</span>
+        </div>
+        <div className="toolbar-actions">
+          <button
+            className="icon-button"
+            disabled={!canUndo}
+            onClick={onUndo}
+            title="Undo (Ctrl+Z)"
+          >
+            ↶
+          </button>
+          <button
+            className="icon-button"
+            disabled={!canRedo}
+            onClick={onRedo}
+            title="Redo (Ctrl+Y)"
+          >
+            ↷
+          </button>
+          <Dropdown
+            className="zoom-dropdown"
+            value={zoom}
+            options={zoomOptions}
+            onChange={onZoom}
+            ariaLabel="Zoom"
+          />
+          <button
+            className={autosave ? "autosave-toggle on" : "autosave-toggle"}
+            onClick={onToggleAutosave}
+            title={"AutoSave " + (autosave ? "on" : "off")}
+          >
+            <span>AutoSave</span>
+            <span className="autosave-switch">
+              <i />
+            </span>
+          </button>
+          <button
+            className="icon-button"
+            onClick={() => void toggleFullscreen()}
+            title={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          >
+            {fullscreen ? "↙" : "⛶"}
+          </button>
+          <button className="subtle-button" onClick={onExport}>
+            ⇩ Export PNG
+          </button>
+          <button className="save-button" onClick={onSave}>
+            {saving ? "Saving…" : "Save Canvas"} <span>↗</span>
+          </button>
+          {signedIn ? (
+            <button
+              className="avatar signed-in"
+              onClick={() => setSignedIn(false)}
+            >
+              V
+            </button>
+          ) : (
+            <button
+              className="account-button"
+              onClick={() => setAuthOpen(true)}
+            >
+              Sign in
+            </button>
+          )}
+        </div>
+      </header>
+      {authOpen && (
+        <div className="auth-backdrop" onClick={() => setAuthOpen(false)}>
+          <form
+            className="auth-card"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (email.trim()) {
+                setSignedIn(true);
+                setAuthOpen(false);
+              }
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="auth-close"
+              onClick={() => setAuthOpen(false)}
+            >
+              ×
+            </button>
+            <span className="eyebrow">Canvasly account</span>
+            <h2>Welcome back</h2>
+            <p>Sign in to keep your canvases available across sessions.</p>
+            <label>
+              Email
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+              />
+            </label>
+            <label>
+              Password
+              <input type="password" required placeholder="••••••••" />
+            </label>
+            <button className="save-button" type="submit">
+              Sign in
+            </button>
+            <small>
+              Authentication UI is ready; connect your auth provider when
+              accounts are enabled.
+            </small>
+          </form>
+        </div>
+      )}
+    </>
+  );
 }

@@ -1,16 +1,145 @@
-import mongoose from 'mongoose';
-import { Canvas } from '../models/Canvas.js';
-import { canvasInput, canvasCreateInput } from '../validators/canvas.js';
-function validId(id) { return mongoose.isValidObjectId(id); }
-function nameKey(name) { return name.trim().toLocaleLowerCase(); }
-function parse(body, schema = canvasInput) { return schema.parse(body); }
-async function assertUniqueName(name, excludeId) { const query = { nameKey: nameKey(name) }; if (excludeId) query._id = { $ne: excludeId }; if (await Canvas.exists(query)) { const error = new Error('A canvas with this name already exists'); error.statusCode = 409; throw error; } }
-async function nextDefaultName() { const names = await Canvas.find({}, { name: 1 }).lean(); const used = new Set(names.map(item => nameKey(item.name))); let number = 1; while (used.has('untitled canvas ' + number)) number += 1; return 'Untitled Canvas ' + number; }
-function activeFilter() { return { deletedAt: null }; }
-export async function listCanvases(req, res, next) { try { const filter = req.query.view === 'trash' ? { deletedAt: { $ne: null } } : activeFilter(); res.json(await Canvas.find(filter).sort({ updatedAt: -1 }).select('name width height elements updatedAt createdAt deletedAt')); } catch (e) { next(e); } }
-export async function getCanvas(req, res, next) { try { if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid canvas id' }); const doc = await Canvas.findOne({ _id: req.params.id, ...activeFilter() }); if (!doc) return res.status(404).json({ error: 'Canvas not found' }); res.json(doc); } catch (e) { next(e); } }
-export async function createCanvas(req, res, next) { try { const input = parse(req.body, canvasCreateInput); let attempts = 0; while (attempts++ < 3) { const name = input.name || await nextDefaultName(); try { const doc = await Canvas.create({ ...input, name, nameKey: nameKey(name), deletedAt: null }); return res.status(201).json(doc); } catch (error) { if (error?.code !== 11000 || input.name) throw error; } } const error = new Error('Unable to allocate a unique canvas name'); error.statusCode = 409; throw error; } catch (e) { next(e); } }
-export async function updateCanvas(req, res, next) { try { if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid canvas id' }); const input = parse(req.body); await assertUniqueName(input.name, req.params.id); const doc = await Canvas.findOneAndUpdate({ _id: req.params.id, ...activeFilter() }, { ...input, nameKey: nameKey(input.name) }, { new: true, runValidators: true }); if (!doc) return res.status(404).json({ error: 'Canvas not found' }); res.json(doc); } catch (e) { next(e); } }
-export async function deleteCanvas(req, res, next) { try { if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid canvas id' }); const doc = await Canvas.findOneAndUpdate({ _id: req.params.id, ...activeFilter() }, { deletedAt: new Date() }, { new: true }); if (!doc) return res.status(404).json({ error: 'Canvas not found' }); res.json(doc); } catch (e) { next(e); } }
-export async function restoreCanvas(req, res, next) { try { if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid canvas id' }); const doc = await Canvas.findOneAndUpdate({ _id: req.params.id, deletedAt: { $ne: null } }, { deletedAt: null }, { new: true }); if (!doc) return res.status(404).json({ error: 'Canvas not found in trash' }); res.json(doc); } catch (e) { next(e); } }
-export async function permanentlyDeleteCanvas(req, res, next) { try { if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid canvas id' }); const doc = await Canvas.findOneAndDelete({ _id: req.params.id, deletedAt: { $ne: null } }); if (!doc) return res.status(404).json({ error: 'Canvas not found in trash' }); res.status(204).send(); } catch (e) { next(e); } }
+import mongoose from "mongoose";
+import { Canvas } from "../models/Canvas.js";
+import { canvasInput, canvasCreateInput } from "../validators/canvas.js";
+function validId(id) {
+  return mongoose.isValidObjectId(id);
+}
+function nameKey(name) {
+  return name.trim().toLocaleLowerCase();
+}
+function parse(body, schema = canvasInput) {
+  return schema.parse(body);
+}
+async function assertUniqueName(name, excludeId) {
+  const query = { nameKey: nameKey(name) };
+  if (excludeId) query._id = { $ne: excludeId };
+  if (await Canvas.exists(query)) {
+    const error = new Error("A canvas with this name already exists");
+    error.statusCode = 409;
+    throw error;
+  }
+}
+async function nextDefaultName() {
+  const names = await Canvas.find({}, { name: 1 }).lean();
+  const used = new Set(names.map((item) => nameKey(item.name)));
+  let number = 1;
+  while (used.has("untitled canvas " + number)) number += 1;
+  return "Untitled Canvas " + number;
+}
+function activeFilter() {
+  return { deletedAt: null };
+}
+export async function listCanvases(req, res, next) {
+  try {
+    const filter =
+      req.query.view === "trash"
+        ? { deletedAt: { $ne: null } }
+        : activeFilter();
+    res.json(
+      await Canvas.find(filter)
+        .sort({ updatedAt: -1 })
+        .select("name width height elements updatedAt createdAt deletedAt"),
+    );
+  } catch (e) {
+    next(e);
+  }
+}
+export async function getCanvas(req, res, next) {
+  try {
+    if (!validId(req.params.id))
+      return res.status(400).json({ error: "Invalid canvas id" });
+    const doc = await Canvas.findOne({ _id: req.params.id, ...activeFilter() });
+    if (!doc) return res.status(404).json({ error: "Canvas not found" });
+    res.json(doc);
+  } catch (e) {
+    next(e);
+  }
+}
+export async function createCanvas(req, res, next) {
+  try {
+    const input = parse(req.body, canvasCreateInput);
+    let attempts = 0;
+    while (attempts++ < 3) {
+      const name = input.name || (await nextDefaultName());
+      try {
+        const doc = await Canvas.create({
+          ...input,
+          name,
+          nameKey: nameKey(name),
+          deletedAt: null,
+        });
+        return res.status(201).json(doc);
+      } catch (error) {
+        if (error?.code !== 11000 || input.name) throw error;
+      }
+    }
+    const error = new Error("Unable to allocate a unique canvas name");
+    error.statusCode = 409;
+    throw error;
+  } catch (e) {
+    next(e);
+  }
+}
+export async function updateCanvas(req, res, next) {
+  try {
+    if (!validId(req.params.id))
+      return res.status(400).json({ error: "Invalid canvas id" });
+    const input = parse(req.body);
+    await assertUniqueName(input.name, req.params.id);
+    const doc = await Canvas.findOneAndUpdate(
+      { _id: req.params.id, ...activeFilter() },
+      { ...input, nameKey: nameKey(input.name) },
+      { new: true, runValidators: true },
+    );
+    if (!doc) return res.status(404).json({ error: "Canvas not found" });
+    res.json(doc);
+  } catch (e) {
+    next(e);
+  }
+}
+export async function deleteCanvas(req, res, next) {
+  try {
+    if (!validId(req.params.id))
+      return res.status(400).json({ error: "Invalid canvas id" });
+    const doc = await Canvas.findOneAndUpdate(
+      { _id: req.params.id, ...activeFilter() },
+      { deletedAt: new Date() },
+      { new: true },
+    );
+    if (!doc) return res.status(404).json({ error: "Canvas not found" });
+    res.json(doc);
+  } catch (e) {
+    next(e);
+  }
+}
+export async function restoreCanvas(req, res, next) {
+  try {
+    if (!validId(req.params.id))
+      return res.status(400).json({ error: "Invalid canvas id" });
+    const doc = await Canvas.findOneAndUpdate(
+      { _id: req.params.id, deletedAt: { $ne: null } },
+      { deletedAt: null },
+      { new: true },
+    );
+    if (!doc)
+      return res.status(404).json({ error: "Canvas not found in trash" });
+    res.json(doc);
+  } catch (e) {
+    next(e);
+  }
+}
+export async function permanentlyDeleteCanvas(req, res, next) {
+  try {
+    if (!validId(req.params.id))
+      return res.status(400).json({ error: "Invalid canvas id" });
+    const doc = await Canvas.findOneAndDelete({
+      _id: req.params.id,
+      deletedAt: { $ne: null },
+    });
+    if (!doc)
+      return res.status(404).json({ error: "Canvas not found in trash" });
+    res.status(204).send();
+  } catch (e) {
+    next(e);
+  }
+}
