@@ -6,7 +6,8 @@ import canvasRoutes from './routes/canvases.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:3000' }));
+const configuredOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:3000,http://localhost:3001').split(',').map(origin => origin.trim()).filter(Boolean);
+app.use(cors({ origin: (origin, callback) => { let localDevelopmentOrigin = false; try { const parsedOrigin = origin ? new URL(origin) : null; localDevelopmentOrigin = !!parsedOrigin && (parsedOrigin.hostname === 'localhost' || parsedOrigin.hostname === '127.0.0.1'); } catch {} if (!origin || configuredOrigins.includes(origin) || localDevelopmentOrigin) return callback(null, true); return callback(new Error('Origin is not allowed')); } }));
 app.use(express.json({ limit: '1mb' }));
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/canvases', canvasRoutes);
