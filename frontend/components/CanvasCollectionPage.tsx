@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 import { Palette } from "lucide-react";
 import type { CanvasDocument } from "../services/api";
 import { api } from "../services/api";
@@ -12,10 +13,18 @@ export default function CanvasCollectionPage({
   view: "active" | "trash";
 }) {
   const router = useRouter();
+  const { data: session, status: authStatus } = useSession();
   const [items, setItems] = useState<CanvasDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const load = async () => {
+    if (authStatus === "loading") return;
+    if (!session) {
+      setItems([]);
+      setLoading(false);
+      setError("Sign in with Google to view your saved canvases.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -30,7 +39,7 @@ export default function CanvasCollectionPage({
   };
   useEffect(() => {
     void load();
-  }, [view]);
+  }, [authStatus, session, view]);
   const title = view === "trash" ? "Trash" : "My Canvases";
   const restore = async (id: string) => {
     try {
@@ -74,6 +83,7 @@ export default function CanvasCollectionPage({
         {error && (
           <p className="muted">
             {error}{" "}
+            {!session && <button className="save-button" onClick={() => void signIn("google")}>Sign in with Google</button>}
             <button className="subtle-button" onClick={() => void load()}>
               Retry
             </button>

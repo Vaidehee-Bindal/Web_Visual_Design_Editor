@@ -14,6 +14,7 @@ const configuredOrigins = (
   .filter(Boolean);
 app.use(
   cors({
+    credentials: true,
     origin: (origin, callback) => {
       let localDevelopmentOrigin = false;
       try {

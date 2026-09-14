@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import type Konva from "konva";
 import Toolbar from "./Toolbar/Toolbar";
 import PropertiesPanel from "./PropertiesPanel/PropertiesPanel";
@@ -33,6 +34,7 @@ import {
   type CanvasElement,
   type ElementType,
   type LineStyle,
+  ApiError,
 } from "../services/api";
 
 const CanvasStage = dynamic(() => import("./CanvasEditor/CanvasStage"), {
@@ -68,6 +70,7 @@ type EditorDialog =
   | null;
 
 export default function Editor({ canvasId }: { canvasId?: string } = {}) {
+  const { status: authStatus } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const [editingText, setEditingText] = useState("");
@@ -149,6 +152,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
     [markUnsaved, replaceCanvas],
   );
   const loadCanvases = useCallback(async () => {
+    if (authStatus === "loading") return;
     setLoading(true);
     setLoadError(null);
     try {
@@ -189,13 +193,24 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
           : "All changes saved",
       );
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401 && !canvasId) {
+        const anonymous = activeCanvasRef.current || blankCanvas();
+        canvasesRef.current = [anonymous];
+        activeCanvasRef.current = anonymous;
+        activeCanvasIdRef.current = anonymous.localId!;
+        setCanvases([anonymous]);
+        setActiveCanvasId(anonymous.localId!);
+        setStatus(anonymous.elements.length ? "Unsaved changes" : "All changes saved");
+        setLoadError(null);
+        return;
+      }
       setLoadError(
         error instanceof Error ? error.message : "Unable to load canvases",
       );
     } finally {
       setLoading(false);
     }
-  }, [canvasId]);
+  }, [authStatus, canvasId]);
   useEffect(() => {
     void loadCanvases();
   }, [loadCanvases]);
@@ -343,6 +358,17 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
   };
   const newCanvas = async () => {
     try {
+      if (authStatus !== "authenticated") {
+        const next = { ...blankCanvas(), name: nextDefaultName(canvasesRef.current) };
+        canvasesRef.current = [next, ...canvasesRef.current.filter((canvas) => canvas._id)];
+        activeCanvasRef.current = next;
+        activeCanvasIdRef.current = next.localId!;
+        setCanvases(canvasesRef.current);
+        setActiveCanvasId(next.localId!);
+        setSelectedIds([]);
+        setStatus("Unsaved changes");
+        return;
+      }
       const created = await api.create({
         width: 1000,
         height: 700,
@@ -377,6 +403,11 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
     }
   };
   const saveCanvas = useCallback(async () => {
+    if (authStatus !== "authenticated") {
+      setStatus("Sign in with Google to save canvases");
+      void signIn("google");
+      return false;
+    }
     saveRequestedRef.current = true;
     if (saveInFlightRef.current) return saveInFlightRef.current;
     const run = async (): Promise<boolean> => {
@@ -449,7 +480,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
     const request = run();
     saveInFlightRef.current = request;
     return request;
-  }, []);
+  }, [authStatus]);
   const saveCanvasWithName = useCallback(() => {
     const source = activeCanvasRef.current;
     if (!source) return;

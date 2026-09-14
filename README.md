@@ -65,5 +65,25 @@ The backend uses routes → controllers → model boundaries. It has no frontend
 
 Implemented: rectangle/circle/text tools, selection, drag, resize/rotate via Transformer, property editing, delete, layer forward/backward, undo/redo, autosave after 1.2 seconds, PNG export, and full CRUD persistence.
 
-This is intentionally a single-user demo: authentication, collaboration, image assets, and per-user authorization are not included. The canvas coordinate system is fixed to the selected canvas dimensions and is displayed responsively through CSS scaling.
+Authentication uses Google through Auth.js. Anonymous visitors can edit locally in the browser, but saving and the saved-canvas/trash views require sign-in. The API verifies the Auth.js encrypted session token and scopes every MongoDB query to that account's stable Google subject, so canvas IDs cannot be used to cross account boundaries.
 
+## Authentication setup
+
+Set the same values in both `frontend/.env` and `backend/.env`:
+
+```env
+AUTH_URL=http://localhost:3000
+AUTH_SECRET=use-the-same-long-random-secret-in-both-apps
+AUTH_GOOGLE_ID=your-google-client-id
+AUTH_GOOGLE_SECRET=your-google-client-secret
+```
+
+Register `http://localhost:3000/api/auth/callback/google` as an authorized Google OAuth redirect URI. If the database already contains canvases from the old single-user version, choose the Google subject that should own them and run:
+
+```powershell
+cd backend
+$env:LEGACY_USER_ID="the-google-subject"
+npm run migrate:ownership
+```
+
+The migration removes the old globally-unique canvas-name index, assigns legacy records to that account, and creates the per-user indexes. New records always receive `userId` from the server-side session; client-provided user IDs are ignored.

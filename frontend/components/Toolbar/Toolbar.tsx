@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import {
   Download,
+  LogOut,
   Maximize2,
   Minimize2,
   Redo2,
   Undo2,
   UserRound,
-  X,
 } from "lucide-react";
 import type { ElementType } from "../../services/api";
 import Dropdown from "../Dropdown/Dropdown";
@@ -47,9 +48,7 @@ export default function Toolbar({
   autosave,
   onToggleAutosave,
 }: Props) {
-  const [signedIn, setSignedIn] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [email, setEmail] = useState("");
+  const { data: session } = useSession();
   const [fullscreen, setFullscreen] = useState(false);
   useEffect(() => {
     const sync = () => setFullscreen(Boolean(document.fullscreenElement));
@@ -65,7 +64,7 @@ export default function Toolbar({
       setFullscreen(Boolean(document.fullscreenElement));
     }
   };
-  const accountInitial = email.trim().charAt(0).toUpperCase() || "U";
+  const accountInitial = session?.user?.name?.trim().charAt(0).toUpperCase() || "U";
   return (
     <>
       <header className="toolbar">
@@ -135,19 +134,28 @@ export default function Toolbar({
           >
             {saving ? "Saving…" : saved ? "Saved!" : "Save Canvas"}
           </button>
-          {signedIn ? (
-            <button
-              className="avatar signed-in"
-              onClick={() => setSignedIn(false)}
-              aria-label={`Sign out ${email}`}
-              title={`Signed in as ${email}`}
-            >
-              {accountInitial}
-            </button>
+          {session?.user ? (
+            <>
+              <span
+                className="avatar signed-in"
+                aria-label={`Signed in as ${session.user.email || session.user.name || "user"}`}
+                title={`Signed in as ${session.user.email || session.user.name || "user"}`}
+              >
+                {accountInitial}
+              </span>
+              <button
+                className="account-button toolbar-signout-button"
+                onClick={() => void signOut({ callbackUrl: "/" })}
+                aria-label="Log out"
+              >
+                <LogOut size={16} strokeWidth={1.8} />
+                Log out
+              </button>
+            </>
           ) : (
             <button
               className="avatar signed-out"
-              onClick={() => setAuthOpen(true)}
+              onClick={() => void signIn("google")}
               aria-label="Sign in"
               title="Sign in"
             >
@@ -156,53 +164,6 @@ export default function Toolbar({
           )}
         </div>
       </header>
-      {authOpen && (
-        <div className="auth-backdrop" onClick={() => setAuthOpen(false)}>
-          <form
-            className="auth-card"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (email.trim()) {
-                setSignedIn(true);
-                setAuthOpen(false);
-              }
-            }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="auth-close"
-              onClick={() => setAuthOpen(false)}
-            >
-              <X size={18} strokeWidth={1.8} />
-            </button>
-            <span className="eyebrow">SketchStack account</span>
-            <h2>Welcome back</h2>
-            <p>Sign in to keep your canvases available across sessions.</p>
-            <label>
-              Email
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-              />
-            </label>
-            <label>
-              Password
-              <input type="password" required placeholder="••••••••" />
-            </label>
-            <button className="save-button" type="submit">
-              Sign in
-            </button>
-            <small>
-              Authentication UI is ready; connect your auth provider when
-              accounts are enabled.
-            </small>
-          </form>
-        </div>
-      )}
     </>
   );
 }

@@ -33,11 +33,12 @@ const elementSchema = new mongoose.Schema(
 
 const canvasSchema = new mongoose.Schema(
   {
+    userId: { type: String, ref: "User", required: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 80 },
     nameKey: {
       type: String,
       required: true,
-      unique: true,
+      unique: false,
       sparse: true,
       select: false,
     },
@@ -48,5 +49,8 @@ const canvasSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+canvasSchema.index({ userId: 1, nameKey: 1 }, { unique: true });
+canvasSchema.index({ userId: 1, updatedAt: -1 });
 
 export const Canvas = mongoose.model("Canvas", canvasSchema);

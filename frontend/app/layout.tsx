@@ -7,6 +7,7 @@ import "./title.css";
 import "./text-edit.css";
 import "./line-tool.css";
 import "./canvas-size.css";
+import AuthProvider from "../components/AuthProvider";
 import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "SketchStack — Design canvas",
@@ -19,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><AuthProvider>{children}</AuthProvider></body>
     </html>
   );
 }

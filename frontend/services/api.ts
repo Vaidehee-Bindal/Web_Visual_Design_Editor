@@ -36,14 +36,18 @@ export type CanvasDocument = {
   deletedAt?: string | null;
 };
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API}${path}`, {
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     ...options,
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || "Request failed");
+    throw new ApiError(body.error || "Request failed", response.status);
   }
   return response.status === 204 ? (undefined as T) : response.json();
 }

@@ -8,7 +8,9 @@ import {
   restoreCanvas,
   permanentlyDeleteCanvas,
 } from "../controllers/canvasController.js";
+import { requireAuth } from "../middleware/auth.js";
 const router = Router();
+router.use(requireAuth);
 router.get("/", listCanvases);
 router.post("/", createCanvas);
 router.get("/:id", getCanvas);
