@@ -6,44 +6,78 @@ import canvasRoutes from "./routes/canvases.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
+
 const configuredOrigins = (
   process.env.CLIENT_ORIGIN || "http://localhost:3000,http://localhost:3001"
 )
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
 app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
       let localDevelopmentOrigin = false;
+
       try {
         const parsedOrigin = origin ? new URL(origin) : null;
+
         localDevelopmentOrigin =
           !!parsedOrigin &&
           (parsedOrigin.hostname === "localhost" ||
             parsedOrigin.hostname === "127.0.0.1");
       } catch {}
+
       if (
         !origin ||
         configuredOrigins.includes(origin) ||
         localDevelopmentOrigin
-      )
+      ) {
         return callback(null, true);
+      }
+
       return callback(new Error("Origin is not allowed"));
     },
   }),
 );
+
 app.use(express.json({ limit: "1mb" }));
-app.get("/health", (_req, res) => res.json({ status: "ok" }));
+
+// Health check
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
+// Connect to MongoDB before handling canvas requests
+app.use("/api/canvases", async (_req, _res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.use("/api/canvases", canvasRoutes);
+
 app.use(errorHandler);
-const port = process.env.PORT || 4000;
-connectDatabase()
-  .then(() =>
-    app.listen(port, () => console.log(`SketchStack API listening on ${port}`)),
-  )
-  .catch((error) => {
-    console.error("Startup failed:", error.message);
-    process.exit(1);
-  });
+
+// IMPORTANT: Vercel needs the Express app exported
+export default app;
+
+// Local development
+if (!process.env.VERCEL) {
+  const port = process.env.PORT || 4000;
+
+  connectDatabase()
+    .then(() =>
+      app.listen(port, () =>
+        console.log(`SketchStack API listening on ${port}`),
+      ),
+    )
+    .catch((error) => {
+      console.error("Startup failed:", error.message);
+      process.exit(1);
+    });
+}
