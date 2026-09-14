@@ -272,6 +272,23 @@ Create and update requests use this shape:
 
 Validation limits include canvas widths from 320 to 2400, heights from 240 to 1600, names up to 80 characters, a maximum of 500 elements, finite numeric coordinates, six-digit hexadecimal colors, and type-specific positive dimensions.
 
+## Bonus Features Implementation
+
+The project implements the following bonus requirements beyond the basic rectangle, circle, and text editor:
+
+| Bonus | Implementation |
+| --- | --- |
+| Layer management | Elements are stored in render order inside the canvas `elements` array. The properties panel can move selected elements forward or backward by swapping their array positions. |
+| Undo and redo | `Editor.tsx` keeps bounded `history` and `future` arrays in React state. Mutating an element records the previous element array, while undo and redo move snapshots between the two stacks. |
+| Autosave | Autosave is enabled by default. After an edit marks the canvas as unsaved, a short debounce waits for inactivity before calling the same create/update API path used by manual save. In-flight saves are coalesced and repeat when a newer edit arrives. |
+| Authentication | Auth.js/NextAuth provides Google sign-in. The backend decodes the session cookie using `AUTH_SECRET`, synchronizes the user record, and derives `userId` from the verified session rather than from request data. |
+| Export | The active Konva stage is converted to a PNG data URL with `stage.toDataURL({ pixelRatio: 2 })` and downloaded using the active canvas name. |
+| Trash and restore | Normal deletion sets `deletedAt` instead of immediately removing the MongoDB document. Active and trash views use separate queries, and a restore endpoint clears the timestamp. Permanent deletion is available only for documents already in trash. |
+| Additional drawing tools | The editor includes straight, curved, and elbow lines. Line points and style are persisted with the same element model as shapes and text. |
+| Clipboard and multi-selection | Users can select multiple elements, copy them to an in-memory clipboard, and paste offset duplicates with new element IDs. |
+
+These features are intentionally implemented in the editor state and API layers rather than as separate persistence systems. That keeps manual save, autosave, reload, and export behavior consistent.
+
 ## Architecture
 
 ### Frontend
@@ -299,6 +316,44 @@ HTTP request
 ```
 
 The Express API contains no frontend rendering logic. Canvas names are unique per user, queries always include the authenticated user ID, and `deletedAt` distinguishes active documents from trash documents.
+
+## Design and Architecture Decisions
+
+### React Konva for the editor surface
+
+The canvas uses React Konva `Stage`, `Layer`, shape nodes, and `Transformer` instead of HTML elements positioned with CSS. This gives the editor a scene graph suited to graphical composition, supports native dragging and transforms, and makes PNG export possible from the same rendered stage. Konva events are translated back into serializable React state so the persisted document remains independent of the canvas runtime.
+
+### React state as the source of truth
+
+The active canvas and its elements live in React state. Drag and transform handlers normalize changes into element properties such as `x`, `y`, `width`, `height`, `radius`, and `rotation`. This avoids keeping a separate hidden Konva document and makes properties-panel editing, undo/redo, autosave, and persistence operate on one consistent model.
+
+### Focused frontend components
+
+`Editor` coordinates workflow state, while `CanvasStage`, `Toolbar`, `PropertiesPanel`, `CanvasList`, and collection pages own focused UI concerns. This keeps rendering, controls, property editing, and saved-canvas navigation replaceable without putting the entire product in one component.
+
+### Routes, controllers, validators, and models
+
+The backend uses a conventional Express flow: routes authenticate and dispatch requests, controllers apply application rules, Zod validates external input, and Mongoose owns the database schema. The API does not contain frontend-specific rendering behavior, and the frontend does not construct MongoDB queries.
+
+### REST payloads are full editable canvas documents
+
+Create and update requests use the same canvas shape. This makes manual save and autosave share one API contract, keeps reload behavior predictable, and allows the backend to validate the complete document before replacing editable state. The server controls ownership, timestamps, normalized names, and deletion state.
+
+### Per-user ownership and soft deletion
+
+Every canvas query includes the authenticated user ID. Names are unique per user through a normalized `nameKey` and compound index, rather than globally across all accounts. Soft deletion preserves a recovery path and keeps permanent deletion as an explicit action from the trash view.
+
+### Validation at two boundaries
+
+Zod rejects malformed or oversized request data before database work begins. Mongoose then enforces schema types, enum values, limits, timestamps, and indexes at persistence time. The two layers protect both the HTTP boundary and direct model operations.
+
+### Direct API and Next.js proxy support
+
+The typed frontend client can call Express directly with `NEXT_PUBLIC_API_URL`, or use the Next.js catch-all proxy with `BACKEND_API_URL`. Supporting both keeps local development simple while allowing deployments where the browser should communicate with one same-origin frontend URL.
+
+### Authentication is optional for local composition, required for persistence
+
+Anonymous users can experiment with a local in-browser canvas without creating an account. Cloud CRUD operations require Google authentication, which keeps the first-use experience lightweight while ensuring saved documents have a verified owner.
 
 ## Safety and Security
 
