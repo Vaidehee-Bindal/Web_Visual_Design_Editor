@@ -25,7 +25,7 @@ The editor supports:
 - A trash view with restore and permanent deletion actions.
 - Google authentication through Auth.js/NextAuth.
 - Per-user canvas ownership and server-side access control.
-- Anonymous local editing before sign-in; saved cloud canvases require authentication.
+- Signed-out users can work on one local canvas by default; creating and managing multiple canvases requires Google sign-in.
 
 ## Technology Stack
 
@@ -141,7 +141,7 @@ The database and collections are created when the application first writes data.
 
 ## Google OAuth Setup
 
-Google sign-in is optional for trying the local canvas, but it is required to save canvases to the authenticated database account.
+Google sign-in is optional for trying the local canvas, but it is required to save canvases to the authenticated database account or create and manage more than one canvas.
 
 1. Create OAuth credentials in Google Cloud Console.
 2. Configure the consent screen and add a test user if the app is still in testing.
@@ -204,10 +204,11 @@ The backend can be started without Nodemon with `cd backend` followed by `npm st
 2. Use the toolbar to add a shape, text, or line.
 3. Select an element on the stage, then drag, resize, rotate, or edit it in the properties panel.
 4. Use the layer controls to change stacking order.
-5. Save manually or leave autosave enabled.
-6. Sign in with Google when prompted to persist the canvas to MongoDB.
-7. Open `My Canvases` to reload or delete saved work.
-8. Open `Trash` to restore a soft-deleted canvas or delete it permanently.
+5. While signed out, the editor provides one local canvas. Starting another anonymous canvas replaces the current unsaved canvas.
+6. Sign in with Google to create and manage multiple canvases, persist work to MongoDB, and access saved-canvas views.
+7. Save manually or leave autosave enabled.
+8. Open `My Canvases` to reload or delete saved work.
+9. Open `Trash` to restore a soft-deleted canvas or delete it permanently.
 
 ## REST API
 
@@ -282,9 +283,13 @@ The project implements the following bonus requirements beyond the basic rectang
 | Undo and redo | `Editor.tsx` keeps bounded `history` and `future` arrays in React state. Mutating an element records the previous element array, while undo and redo move snapshots between the two stacks. |
 | Autosave | Autosave is enabled by default. After an edit marks the canvas as unsaved, a short debounce waits for inactivity before calling the same create/update API path used by manual save. In-flight saves are coalesced and repeat when a newer edit arrives. |
 | Authentication | Auth.js/NextAuth provides Google sign-in. The backend decodes the session cookie using `AUTH_SECRET`, synchronizes the user record, and derives `userId` from the verified session rather than from request data. |
+| Line tool | Users can add and edit straight lines. Line points, stroke settings, position, and rotation are rendered with Konva `Line` and persisted in the canvas document. |
+| Curve tool | Users can add curved lines using Konva bezier rendering. Curve points and line style are stored as regular canvas elements. |
+| Keyboard shortcuts | `Ctrl/Cmd+C` copies, `Ctrl/Cmd+V` pastes, `Ctrl/Cmd+Z` undoes, `Ctrl/Cmd+Y` or `Ctrl/Cmd+Shift+Z` redoes, `Ctrl/Cmd+S` saves, and `Delete`/`Backspace` removes selected elements. Shortcuts are ignored while typing in form controls. |
+| Directional marquee box | Dragging a selection box left-to-right selects elements fully contained by the box. Dragging right-to-left selects elements that overlap the box. Holding `Shift` adds the results to the current selection. |
 | Export | The active Konva stage is converted to a PNG data URL with `stage.toDataURL({ pixelRatio: 2 })` and downloaded using the active canvas name. |
 | Trash and restore | Normal deletion sets `deletedAt` instead of immediately removing the MongoDB document. Active and trash views use separate queries, and a restore endpoint clears the timestamp. Permanent deletion is available only for documents already in trash. |
-| Additional drawing tools | The editor includes straight, curved, and elbow lines. Line points and style are persisted with the same element model as shapes and text. |
+| Additional drawing tools | The editor also includes elbow lines. Their points and style are persisted with the same element model as shapes and text. |
 | Clipboard and multi-selection | Users can select multiple elements, copy them to an in-memory clipboard, and paste offset duplicates with new element IDs. |
 
 These features are intentionally implemented in the editor state and API layers rather than as separate persistence systems. That keeps manual save, autosave, reload, and export behavior consistent.
@@ -351,9 +356,9 @@ Zod rejects malformed or oversized request data before database work begins. Mon
 
 The typed frontend client can call Express directly with `NEXT_PUBLIC_API_URL`, or use the Next.js catch-all proxy with `BACKEND_API_URL`. Supporting both keeps local development simple while allowing deployments where the browser should communicate with one same-origin frontend URL.
 
-### Authentication is optional for local composition, required for persistence
+### One local canvas for signed-out users
 
-Anonymous users can experiment with a local in-browser canvas without creating an account. Cloud CRUD operations require Google authentication, which keeps the first-use experience lightweight while ensuring saved documents have a verified owner.
+Anonymous users can experiment with one local in-browser canvas without creating an account. The signed-out editor does not provide multiple independent local canvases: starting a new one replaces the current unsaved canvas. Google authentication is required for additional canvases, cloud CRUD operations, saved-canvas navigation, and verified ownership.
 
 ## Safety and Security
 
@@ -468,7 +473,7 @@ The script requires `MONGODB_URI`. It assigns legacy records to the selected acc
 - Autosave is client-driven and depends on an authenticated, reachable API.
 - Undo/redo history is browser memory and resets after reload.
 - PNG export is supported; SVG, PDF, and multi-page export are not.
-- Google OAuth is required for cloud persistence, while anonymous edits remain local.
+- Signed-out users are limited to one local canvas; Google OAuth is required for additional canvases and cloud persistence.
 - There is no automated test suite or CI workflow included yet.
 - Production deployment still requires HTTPS, secrets, database, and OAuth configuration.
 
