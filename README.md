@@ -7,6 +7,9 @@ The project demonstrates a maintainable separation between a browser-based scene
 ## Live Demo
 Try it here - https://web-visual-design-editor-qyjc.vercel.app/
 
+## Video Demo 
+https://github.com/user-attachments/assets/e3332d0c-4d33-40b9-b6c1-f8fd565ae4b2
+
 ## What We Built
 
 The editor supports:
