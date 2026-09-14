@@ -42,6 +42,12 @@
 .new-canvas-button span {
   margin-left: 8px;
 }
+.new-canvas-button,
+.side-nav a,
+.layer-section button {
+  display: flex;
+  align-items: center;
+}
 .side-nav {
   display: grid;
   gap: 6px;
@@ -49,7 +55,7 @@
   border-bottom: 1px solid var(--line);
   margin-bottom: 20px;
 }
-.side-nav button {
+.side-nav a {
   border: 0;
   background: transparent;
   text-align: left;
@@ -57,9 +63,7 @@
   padding: 8px 10px;
   font: 13px inherit;
   cursor: pointer;
-}
-.side-nav button:first-letter {
-  font-size: 19px;
+  text-decoration: none;
 }
 .side-nav span {
   margin-left: 12px;
@@ -210,8 +214,8 @@
 }
 .layer-symbol {
   width: 22px;
-  text-align: center;
-  font-size: 16px;
+  display: grid;
+  place-items: center;
   color: var(--purple);
 }
 .promo-card {
@@ -238,7 +242,7 @@
   color: #f5a623;
   font-size: 28px;
 }
-.side-nav button.active {
+.side-nav a.active {
   background: #f2edff;
   color: #6d43d4;
   border-radius: 6px;

@@ -17,6 +17,8 @@
   border: 1px solid #e7e1eb;
   border-radius: 7px;
   padding: 7px 10px;
+  display: grid;
+  place-items: center;
 }
 .sub-label {
   font-size: 11px;
@@ -187,19 +189,23 @@
     grid-template-columns: 220px 1fr;
   }
   .properties {
-    display: block;
+    display: none;
   }
   .tagline {
     display: none;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .workspace {
     display: block;
   }
   .properties {
     display: block;
-    max-height: none;
+    max-height: 560px;
+    overflow-y: auto;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+    padding: 22px 18px;
   }
   .left-rail {
     display: none;
@@ -298,4 +304,17 @@
 }
 .collection-actions .remove-canvas {
   font-size: 11px;
+}
+.collection-actions .destructive-action {
+  border: 0;
+  padding: 5px 0;
+  background: transparent;
+  color: #c95f68;
+  font: 500 11px inherit;
+  cursor: pointer;
+}
+.collection-actions .destructive-action:hover {
+  color: #a9434d;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

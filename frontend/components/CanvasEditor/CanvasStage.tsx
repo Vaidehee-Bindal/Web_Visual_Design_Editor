@@ -289,8 +289,10 @@ export default function CanvasStage({
                 width={el.width}
                 height={el.height}
                 fill={el.fill}
-                stroke={el.strokeEnabled === false ? undefined : el.stroke}
-                strokeWidth={el.strokeWidth || 2}
+                stroke={
+                  el.strokeEnabled === false ? undefined : el.stroke || "#1d1b24"
+                }
+                strokeWidth={el.strokeWidth ?? 2}
                 cornerRadius={12}
               />
             );
@@ -300,8 +302,10 @@ export default function CanvasStage({
                 {...common}
                 radius={el.radius}
                 fill={el.fill}
-                stroke={el.strokeEnabled === false ? undefined : el.stroke}
-                strokeWidth={el.strokeWidth || 2}
+                stroke={
+                  el.strokeEnabled === false ? undefined : el.stroke || "#1d1b24"
+                }
+                strokeWidth={el.strokeWidth ?? 2}
               />
             );
           if (el.type === "line" || el.type === "curve") {
@@ -312,8 +316,8 @@ export default function CanvasStage({
                 {...common}
                 points={el.points}
                 bezier={style === "curved"}
-                stroke={el.stroke || el.fill}
-                strokeWidth={el.strokeWidth || 4}
+                stroke={el.strokeEnabled === false ? undefined : el.stroke || el.fill}
+                strokeWidth={el.strokeWidth ?? 4}
                 lineCap="round"
                 lineJoin="round"
               />
@@ -329,8 +333,10 @@ export default function CanvasStage({
               textDecoration={el.textDecoration || "none"}
               align={el.align || "left"}
               fill={el.fill}
-              stroke={el.strokeEnabled === false ? undefined : el.stroke}
-              strokeWidth={el.strokeWidth || 0}
+              stroke={
+                el.strokeEnabled === false ? undefined : el.stroke || "#1d1b24"
+              }
+              strokeWidth={el.strokeWidth ?? 0}
               padding={4}
               width={el.width}
             />

@@ -29,6 +29,12 @@ export default function CanvasThumbnail({
               cy="0"
               r={element.radius || 20}
               fill={element.fill}
+              stroke={
+                element.strokeEnabled === false
+                  ? undefined
+                  : element.stroke || "#1d1b24"
+              }
+              strokeWidth={element.strokeWidth ?? 2}
             />
           );
         if (element.type === "rectangle")
@@ -39,6 +45,12 @@ export default function CanvasThumbnail({
               height={element.height || 50}
               rx="8"
               fill={element.fill}
+              stroke={
+                element.strokeEnabled === false
+                  ? undefined
+                  : element.stroke || "#1d1b24"
+              }
+              strokeWidth={element.strokeWidth ?? 2}
             />
           );
         if (element.type === "line" || element.type === "curve")
@@ -51,8 +63,12 @@ export default function CanvasThumbnail({
                 "",
               )}
               fill="none"
-              stroke={element.stroke || element.fill}
-              strokeWidth={element.strokeWidth || 4}
+              stroke={
+                element.strokeEnabled === false
+                  ? undefined
+                  : element.stroke || element.fill
+              }
+              strokeWidth={element.strokeWidth ?? 4}
               strokeLinecap="round"
             />
           );

@@ -9,7 +9,7 @@ import "./line-tool.css";
 import "./canvas-size.css";
 import type { Metadata } from "next";
 export const metadata: Metadata = {
-  title: "Canvasly — Design canvas",
+  title: "SketchStack — Design canvas",
   description: "A focused visual design editor",
 };
 export default function RootLayout({

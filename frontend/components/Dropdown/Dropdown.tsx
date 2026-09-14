@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 export type DropdownOption<T extends string | number> = {
   value: T;
@@ -121,7 +122,7 @@ export default function Dropdown<T extends string | number>({
       >
         <span className="dropdown-value">{selected?.label ?? ""}</span>
         <span className="dropdown-chevron" aria-hidden="true">
-          ⌄
+          <ChevronDown size={14} strokeWidth={1.8} />
         </span>
       </button>
       {open && (

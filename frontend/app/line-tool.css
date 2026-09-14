@@ -22,8 +22,9 @@
   color: var(--ink);
 }
 .line-tool-icon {
-  font-size: 22px;
   line-height: 16px;
+  display: grid;
+  place-items: center;
   color: #1689ed;
 }
 .line-tool-button small {

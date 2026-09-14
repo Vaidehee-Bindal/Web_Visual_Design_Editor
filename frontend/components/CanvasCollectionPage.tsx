@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Palette } from "lucide-react";
 import type { CanvasDocument } from "../services/api";
 import { api } from "../services/api";
 import CanvasThumbnail from "./CanvasThumbnail";
@@ -56,8 +57,9 @@ export default function CanvasCollectionPage({
     <main className="app-shell">
       <header className="toolbar">
         <div className="brand">
-          <span className="brand-mark">✦</span>
-          <span>canvasly</span>
+          <span className="brand-logo" aria-label="SketchStack">
+            <img src="/sketchstack_logo.png" alt="SketchStack" />
+          </span>
         </div>
       </header>
       <div className="collection-page">
@@ -79,7 +81,7 @@ export default function CanvasCollectionPage({
         )}
         {!loading && !error && items.length === 0 && (
           <div className="empty-properties">
-            <div className="empty-art">⌁</div>
+            <div className="empty-art"><Palette size={32} strokeWidth={1.5} /></div>
             <h3>{view === "trash" ? "Trash is empty" : "No canvases yet"}</h3>
             <p>
               {view === "trash"
@@ -119,10 +121,10 @@ export default function CanvasCollectionPage({
                     </button>
                   )}
                   <button
-                    className="remove-canvas"
+                    className="remove-canvas destructive-action"
                     onClick={() => void remove(id)}
                   >
-                    {view === "trash" ? "Delete permanently" : "×"}
+                    {view === "trash" && "Delete permanently"}
                   </button>
                 </div>
               </article>

@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  Download,
+  Maximize2,
+  Minimize2,
+  Redo2,
+  Undo2,
+  UserRound,
+  X,
+} from "lucide-react";
 import type { ElementType } from "../../services/api";
 import Dropdown from "../Dropdown/Dropdown";
 type Props = {
@@ -11,6 +20,7 @@ type Props = {
   canUndo: boolean;
   canRedo: boolean;
   saving: boolean;
+  saved: boolean;
   autosave: boolean;
   onToggleAutosave: () => void;
   onAdd?: (type: ElementType) => void;
@@ -33,6 +43,7 @@ export default function Toolbar({
   canUndo,
   canRedo,
   saving,
+  saved,
   autosave,
   onToggleAutosave,
 }: Props) {
@@ -54,12 +65,14 @@ export default function Toolbar({
       setFullscreen(Boolean(document.fullscreenElement));
     }
   };
+  const accountInitial = email.trim().charAt(0).toUpperCase() || "U";
   return (
     <>
       <header className="toolbar">
         <div className="brand">
-          <span className="brand-mark">✦</span>
-          <span>canvasly</span>
+          <span className="brand-logo" aria-label="SketchStack">
+            <img src="/sketchstack_logo.png" alt="SketchStack" />
+          </span>
         </div>
         <div className="toolbar-actions">
           <button
@@ -68,7 +81,7 @@ export default function Toolbar({
             onClick={onUndo}
             title="Undo (Ctrl+Z)"
           >
-            ↶
+            <Undo2 size={18} strokeWidth={1.8} />
           </button>
           <button
             className="icon-button"
@@ -76,8 +89,9 @@ export default function Toolbar({
             onClick={onRedo}
             title="Redo (Ctrl+Y)"
           >
-            ↷
+            <Redo2 size={18} strokeWidth={1.8} />
           </button>
+          <span className="toolbar-divider" aria-hidden="true" />
           <Dropdown
             className="zoom-dropdown"
             value={zoom}
@@ -85,6 +99,7 @@ export default function Toolbar({
             onChange={onZoom}
             ariaLabel="Zoom"
           />
+          <span className="toolbar-divider" aria-hidden="true" />
           <button
             className={autosave ? "autosave-toggle on" : "autosave-toggle"}
             onClick={onToggleAutosave}
@@ -101,27 +116,42 @@ export default function Toolbar({
             title={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
-            {fullscreen ? "↙" : "⛶"}
+            {fullscreen ? <Minimize2 size={18} strokeWidth={1.8} /> : <Maximize2 size={18} strokeWidth={1.8} />}
           </button>
-          <button className="subtle-button" onClick={onExport}>
-            ⇩ Export PNG
+          <span className="toolbar-divider" aria-hidden="true" />
+          <button className="subtle-button toolbar-export-button" onClick={onExport}>
+            <Download
+              className="toolbar-button-icon"
+              size={17}
+              strokeWidth={2}
+              aria-hidden="true"
+            />
+            Export PNG
           </button>
-          <button className="save-button" onClick={onSave}>
-            {saving ? "Saving…" : "Save Canvas"} <span>↗</span>
+          <span className="toolbar-divider" aria-hidden="true" />
+          <button
+            className={saved ? "toolbar-save-button saved" : "toolbar-save-button"}
+            onClick={onSave}
+          >
+            {saving ? "Saving…" : saved ? "Saved!" : "Save Canvas"}
           </button>
           {signedIn ? (
             <button
               className="avatar signed-in"
               onClick={() => setSignedIn(false)}
+              aria-label={`Sign out ${email}`}
+              title={`Signed in as ${email}`}
             >
-              V
+              {accountInitial}
             </button>
           ) : (
             <button
-              className="account-button"
+              className="avatar signed-out"
               onClick={() => setAuthOpen(true)}
+              aria-label="Sign in"
+              title="Sign in"
             >
-              Sign in
+              <UserRound size={18} strokeWidth={1.8} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -144,9 +174,9 @@ export default function Toolbar({
               className="auth-close"
               onClick={() => setAuthOpen(false)}
             >
-              ×
+              <X size={18} strokeWidth={1.8} />
             </button>
-            <span className="eyebrow">Canvasly account</span>
+            <span className="eyebrow">SketchStack account</span>
             <h2>Welcome back</h2>
             <p>Sign in to keep your canvases available across sessions.</p>
             <label>

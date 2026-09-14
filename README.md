@@ -1,6 +1,6 @@
-# Canvasly — Mini Design Canvas
+# SketchStack — Mini Design Canvas
 
-Canvasly is a small, full-stack visual design editor for creating, editing, and persisting simple graphical compositions. It uses React Konva for the scene graph and an Express/MongoDB API for canvas persistence.
+SketchStack is a small, full-stack visual design editor for creating, editing, and persisting simple graphical compositions. It uses React Konva for the scene graph and an Express/MongoDB API for canvas persistence.
 
 ## Technologies
 

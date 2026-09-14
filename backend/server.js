@@ -40,7 +40,7 @@ app.use(errorHandler);
 const port = process.env.PORT || 4000;
 connectDatabase()
   .then(() =>
-    app.listen(port, () => console.log(`Canvasly API listening on ${port}`)),
+    app.listen(port, () => console.log(`SketchStack API listening on ${port}`)),
   )
   .catch((error) => {
     console.error("Startup failed:", error.message);

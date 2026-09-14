@@ -1,4 +1,5 @@
 import type { CanvasDocument } from "../../services/api";
+import { X } from "lucide-react";
 import CanvasThumbnail from "../CanvasThumbnail";
 type Props = {
   canvases: CanvasDocument[];
@@ -53,7 +54,7 @@ export default function CanvasList({
                     onDelete(canvasId);
                   }}
                 >
-                  ×
+                  <X size={15} strokeWidth={1.8} />
                 </button>
               </div>
             );

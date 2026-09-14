@@ -1,4 +1,19 @@
 import { useEffect, useState } from "react";
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  Palette,
+  SendToBack,
+  Slash,
+  Square,
+  Trash2,
+  Type,
+  Waves,
+} from "lucide-react";
 import type { CanvasElement } from "../../services/api";
 import Dropdown from "../Dropdown/Dropdown";
 type Props = {
@@ -38,6 +53,15 @@ const makeHex = (v: number[]) =>
   v
     .map((n) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0"))
     .join("");
+const layerIcon = (type: CanvasElement["type"]) => {
+  if (type === "text") return Type;
+  if (type === "circle") return Circle;
+  if (type === "line") return Slash;
+  if (type === "curve") return Waves;
+  return Square;
+};
+const displayElementType = (type: CanvasElement["type"]) =>
+  type.charAt(0).toUpperCase() + type.slice(1);
 function NumberField({
   label,
   value,
@@ -204,15 +228,10 @@ export default function PropertiesPanel({
               }}
             >
               <span className="layer-symbol">
-                {layer.type === "text"
-                  ? "T"
-                  : layer.type === "circle"
-                    ? "○"
-                    : layer.type === "line"
-                      ? "╱"
-                      : layer.type === "curve"
-                        ? "∿"
-                        : "□"}
+                {(() => {
+                  const Icon = layerIcon(layer.type);
+                  return <Icon size={16} strokeWidth={1.8} />;
+                })()}
               </span>
               <span>
                 {layer.type}
@@ -231,7 +250,7 @@ export default function PropertiesPanel({
           <button onClick={() => setTab("layers")}>Layers</button>
         </div>
         <div className="empty-properties">
-          <div className="empty-art">⌁</div>
+          <div className="empty-art"><Palette size={32} strokeWidth={1.5} /></div>
           <h3>Select an element</h3>
           <p>Choose a shape on the canvas to edit its properties.</p>
         </div>
@@ -267,9 +286,9 @@ export default function PropertiesPanel({
         <button onClick={() => setTab("layers")}>Layers</button>
       </div>
       <div className="panel-heading">
-        <h2>{text ? "Text" : element.type}</h2>
+        <h2>{text ? "Text" : displayElementType(element.type)}</h2>
         <button className="delete-button" onClick={onDelete}>
-          ♧
+          <Trash2 size={18} strokeWidth={1.8} />
         </button>
       </div>
       {text && (
@@ -351,7 +370,7 @@ export default function PropertiesPanel({
                 }
                 onClick={() => onChange({ align: a })}
               >
-                ≡
+                {a === "left" ? <AlignLeft size={16} strokeWidth={1.8} /> : a === "center" ? <AlignCenter size={16} strokeWidth={1.8} /> : <AlignRight size={16} strokeWidth={1.8} />}
               </button>
             ))}
           </div>
@@ -359,7 +378,7 @@ export default function PropertiesPanel({
       )}
       <div className="property-section">
         <button className="accordion-row" onClick={() => setOpen(!open)}>
-          Transform <span>{open ? "⌃" : "›"}</span>
+          Transform <span>{open ? <ChevronDown size={16} strokeWidth={1.8} /> : <ChevronRight size={16} strokeWidth={1.8} />}</span>
         </button>
         {open && (
           <>
@@ -414,37 +433,40 @@ export default function PropertiesPanel({
       </div>
       <div className="property-section">
         <div className="section-label">
-          {text ? "Text Color" : line ? "Stroke" : "Appearance"}
+          {text ? "Text Color" : line ? "Stroke" : "Fill"}
         </div>
         <ColorControl
-          color={
-            text
-              ? element.fill
-              : line
-                ? element.stroke || "#1d1b24"
-                : element.fill
-          }
-          onChange={(value) =>
-            onChange(line ? { stroke: value } : { fill: value })
-          }
+          color={text ? element.fill : line ? element.stroke || "#1d1b24" : element.fill}
+          onChange={(value) => onChange(line ? { stroke: value } : { fill: value })}
         />
         {!text && (
-          <div className="stroke-row">
-            <span>Stroke</span>
-            <Toggle
-              on={element.strokeEnabled !== false}
-              onClick={() =>
-                onChange({ strokeEnabled: element.strokeEnabled === false })
-              }
-            />
-            <NumberField
-              label="Width"
-              value={element.strokeWidth || (line ? 4 : 2)}
-              min={0}
-              max={100}
-              onChange={(strokeWidth) => onChange({ strokeWidth })}
-            />
-          </div>
+          <>
+            {!line && (
+              <>
+                <div className="section-label">Stroke Color</div>
+                <ColorControl
+                  color={element.stroke || "#1d1b24"}
+                  onChange={(stroke) => onChange({ stroke })}
+                />
+              </>
+            )}
+            <div className="stroke-row">
+              <span>Stroke</span>
+              <Toggle
+                on={element.strokeEnabled !== false}
+                onClick={() =>
+                  onChange({ strokeEnabled: element.strokeEnabled === false })
+                }
+              />
+              <NumberField
+                label="Width"
+                value={element.strokeWidth ?? (line ? 4 : 2)}
+                min={0}
+                max={100}
+                onChange={(strokeWidth) => onChange({ strokeWidth })}
+              />
+            </div>
+          </>
         )}
         <label className="field range-field">
           <span>Opacity</span>

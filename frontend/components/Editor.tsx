@@ -1,6 +1,26 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  BringToFront,
+  ChevronDown,
+  Circle,
+  Command,
+  CornerDownRight,
+  Folder,
+  Palette,
+  Pencil,
+  Plus,
+  SendToBack,
+  Slash,
+  Square,
+  Trash2,
+  Type,
+  Waves,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type Konva from "konva";
 import Toolbar from "./Toolbar/Toolbar";
@@ -37,13 +57,19 @@ const nextDefaultName = (documents: CanvasDocument[]) => {
   while (names.has(`untitled canvas ${index}`)) index += 1;
   return `Untitled Canvas ${index}`;
 };
-const lineOptions: { style: LineStyle; label: string; icon: string }[] = [
-  { style: "straight", label: "Straight line", icon: "╱" },
-  { style: "curved", label: "Curved line", icon: "⌁" },
-  { style: "elbow", label: "Elbow line", icon: "⌜" },
+const lineOptions = [
+  { style: "straight" as LineStyle, label: "Straight line", icon: Slash },
+  { style: "curved" as LineStyle, label: "Curved line", icon: Waves },
+  { style: "elbow" as LineStyle, label: "Elbow line", icon: CornerDownRight },
 ];
+type EditorDialog =
+  | { type: "save"; value: string }
+  | { type: "delete"; canvasId: string; canvasName: string }
+  | null;
 
 export default function Editor({ canvasId }: { canvasId?: string } = {}) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [editingText, setEditingText] = useState("");
   const initial = useMemo(blankCanvas, []);
   const [canvases, setCanvases] = useState<CanvasDocument[]>([initial]);
@@ -53,6 +79,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
   const [future, setFuture] = useState<CanvasElement[][]>([]);
   const [status, setStatus] = useState("All changes saved");
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [zoom, setZoom] = useState(0.8);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [lineMenuOpen, setLineMenuOpen] = useState(false);
@@ -60,8 +87,18 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
   const [clipboard, setClipboard] = useState<CanvasElement[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<EditorDialog>(null);
   const [pendingCanvasId, setPendingCanvasId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!dialog) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDialog(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [dialog]);
   const stageRef = useRef<Konva.Stage | null>(null);
+  const canvasTitleRef = useRef<HTMLInputElement | null>(null);
   const canvasesRef = useRef(canvases);
   const activeCanvasIdRef = useRef(activeCanvasId);
   const statusRef = useRef(status);
@@ -81,31 +118,6 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
-  useEffect(() => {
-    const visibleButtons = Array.from(
-      document.querySelectorAll<HTMLButtonElement>(".side-nav button"),
-    );
-    const paths = ["/my-canvases", "/trash"];
-    const refresh = () =>
-      visibleButtons.forEach((button, index) =>
-        button.classList.toggle(
-          "active",
-          window.location.pathname === paths[index],
-        ),
-      );
-    const handlers = visibleButtons.map((button, index) => {
-      const handler = () => {
-        window.location.assign(paths[index]);
-      };
-      button.addEventListener("click", handler);
-      return handler;
-    });
-    refresh();
-    return () =>
-      visibleButtons.forEach((button, index) =>
-        button.removeEventListener("click", handlers[index]),
-      );
-  }, []);
   const replaceCanvas = useCallback((next: CanvasDocument) => {
     canvasesRef.current = canvasesRef.current.map((canvas) =>
       canvas.localId === next.localId ? next : canvas,
@@ -116,7 +128,10 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
         : activeCanvasRef.current;
     setCanvases(canvasesRef.current);
   }, []);
-  const markUnsaved = useCallback(() => setStatus("Unsaved changes"), []);
+  const markUnsaved = useCallback(() => {
+    setStatus("Unsaved changes");
+    setSaved(false);
+  }, []);
   const updateActiveCanvas = useCallback(
     (
       updater: (canvas: CanvasDocument) => CanvasDocument,
@@ -203,6 +218,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
       setFuture([]);
       setEditingId(null);
       setLineMenuOpen(false);
+      setSaved(false);
       setStatus("All changes saved");
       window.history.pushState({}, "", "/canvas/" + localId);
     },
@@ -230,6 +246,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
       setHistory([]);
       setFuture([]);
       setEditingId(null);
+      setSaved(false);
       setStatus("All changes saved");
     },
     [pendingCanvasId, selectCanvas],
@@ -287,6 +304,9 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
       rotation: 0,
       fill:
         type === "text" ? "#1d1b24" : type === "circle" ? "#ff8a5b" : "#f5a623",
+      stroke: "#1d1b24",
+      strokeWidth: type === "line" ? 4 : 2,
+      strokeEnabled: true,
     };
     const element: CanvasElement =
       type === "rectangle"
@@ -304,8 +324,6 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                     : lineStyle === "elbow"
                       ? [0, 0, 95, 0, 95, 100, 190, 100]
                       : [0, 0, 190, 0],
-                stroke: "#1d1b24",
-                strokeWidth: 4,
               }
             : {
                 ...base,
@@ -349,6 +367,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
       setHistory([]);
       setFuture([]);
       setEditingId(null);
+      setSaved(false);
       setStatus("All changes saved");
       window.history.pushState({}, "", "/canvas/" + next.localId);
     } catch (error) {
@@ -363,6 +382,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
     const run = async (): Promise<boolean> => {
       let successful = true;
       setSaving(true);
+      setSaved(false);
       try {
         while (saveRequestedRef.current) {
           saveRequestedRef.current = false;
@@ -411,6 +431,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
           activeCanvasRef.current = merged;
           setCanvases(canvasesRef.current);
           setStatus("Saved just now");
+          setSaved(true);
           if (latest !== source || saveRequestedRef.current)
             saveRequestedRef.current = true;
         }
@@ -429,6 +450,23 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
     saveInFlightRef.current = request;
     return request;
   }, []);
+  const saveCanvasWithName = useCallback(() => {
+    const source = activeCanvasRef.current;
+    if (!source) return;
+    setDialog({ type: "save", value: source.name });
+  }, []);
+  const confirmSaveCanvas = useCallback(() => {
+    const source = activeCanvasRef.current;
+    if (!source || !dialog || dialog.type !== "save") return;
+    const named = { ...source, name: dialog.value.trim() || source.name };
+    activeCanvasRef.current = named;
+    canvasesRef.current = canvasesRef.current.map((canvas) =>
+      canvas.localId === named.localId ? named : canvas,
+    );
+    setCanvases(canvasesRef.current);
+    setDialog(null);
+    void saveCanvas();
+  }, [dialog, saveCanvas]);
   useEffect(() => {
     if (!autosave || status !== "Unsaved changes") return;
     const timer = window.setTimeout(() => {
@@ -537,7 +575,8 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
           target.isContentEditable);
       if (modifier && key === "s") {
         event.preventDefault();
-        void saveCanvas();
+        if (autosave) void saveCanvas();
+        else saveCanvasWithName();
         return;
       }
       if (isTyping) return;
@@ -560,12 +599,26 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [saveCanvas, selectedIds, clipboard, history, future]);
+  }, [autosave, saveCanvas, saveCanvasWithName, selectedIds, clipboard, history, future]);
   const removeCanvas = async (localId: string) => {
     const target = canvasesRef.current.find(
       (canvas) => canvas.localId === localId,
     );
-    if (!target || !window.confirm(`Delete “${target.name}”?`)) return;
+    if (!target) return;
+    setDialog({
+      type: "delete",
+      canvasId: localId,
+      canvasName: target.name,
+    });
+  };
+  const confirmRemoveCanvas = async () => {
+    if (!dialog || dialog.type !== "delete") return;
+    const localId = dialog.canvasId;
+    const target = canvasesRef.current.find(
+      (canvas) => canvas.localId === localId,
+    );
+    setDialog(null);
+    if (!target) return;
     try {
       if (target._id) await api.remove(target._id);
     } catch (error) {
@@ -612,12 +665,12 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
     return (
       <main className="app-shell">
         <div className="empty-properties">
-          <div className="empty-art">⌁</div>
+          <div className="empty-art"><Palette size={32} strokeWidth={1.5} /></div>
           <h3>Canvas unavailable</h3>
           <p>{loadError}</p>
           <button
             className="save-button"
-            onClick={() => window.location.assign("/my-canvases")}
+            onClick={() => router.push("/my-canvases")}
           >
             Back to My Canvases
           </button>
@@ -632,7 +685,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
       <Toolbar
         onAdd={addElement}
         onNew={newCanvas}
-        onSave={() => void saveCanvas()}
+        onSave={saveCanvasWithName}
         onExport={() => {
           const uri = stageRef.current?.toDataURL({ pixelRatio: 2 });
           if (!uri || !activeCanvas) return;
@@ -649,21 +702,105 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
         canUndo={history.length > 0}
         canRedo={future.length > 0}
         saving={saving}
+        saved={saved}
         autosave={autosave}
         onToggleAutosave={() => setAutosave((value) => !value)}
       />
+      {dialog && (
+        <div
+          className="dialog-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setDialog(null);
+          }}
+        >
+          <section
+            className="editor-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editor-dialog-title"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setDialog(null);
+            }}
+          >
+            <button
+              className="dialog-close"
+              type="button"
+              onClick={() => setDialog(null)}
+              aria-label="Close dialog"
+            >
+              <X size={18} strokeWidth={1.8} />
+            </button>
+            <span className="dialog-eyebrow">
+              {dialog.type === "save" ? "Canvas" : "Delete canvas"}
+            </span>
+            <h2 id="editor-dialog-title">
+              {dialog.type === "save" ? "Save your canvas" : "Delete this canvas?"}
+            </h2>
+            <p>
+              {dialog.type === "save"
+                ? "Choose a name for this canvas before saving it."
+                : `“${dialog.canvasName}” will be moved to the trash.`}
+            </p>
+            {dialog.type === "save" && (
+              <label className="dialog-field">
+                <span>Canvas name</span>
+                <input
+                  autoFocus
+                  value={dialog.value}
+                  onChange={(event) =>
+                    setDialog({ type: "save", value: event.target.value })
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") confirmSaveCanvas();
+                  }}
+                />
+              </label>
+            )}
+            <div className="dialog-actions">
+              <button
+                className="dialog-cancel"
+                type="button"
+                autoFocus={dialog.type === "delete"}
+                onClick={() => setDialog(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className={
+                  dialog.type === "delete" ? "dialog-danger" : "dialog-primary"
+                }
+                type="button"
+                onClick={() =>
+                  dialog.type === "delete"
+                    ? void confirmRemoveCanvas()
+                    : confirmSaveCanvas()
+                }
+              >
+                {dialog.type === "delete" ? "Move to trash" : "Save canvas"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       <div className="workspace">
         <aside className="left-rail">
           <button className="new-canvas-button" onClick={newCanvas}>
-            ＋ <span>New Canvas</span>
+            <Plus size={18} strokeWidth={2} /> <span>New Canvas</span>
           </button>
           <nav className="side-nav">
-            <button>
-              ▱ <span>My Canvases</span>
-            </button>
-            <button>
-              ♧ <span>Trash</span>
-            </button>
+            <Link
+              className={pathname === "/my-canvases" ? "active" : ""}
+              href="/my-canvases"
+            >
+              <Folder size={17} strokeWidth={1.8} /> <span>My Canvases</span>
+            </Link>
+            <Link
+              className={pathname === "/trash" ? "active" : ""}
+              href="/trash"
+            >
+              <Trash2 size={17} strokeWidth={1.8} /> <span>Trash</span>
+            </Link>
           </nav>
           <section className="sidebar-section add-section">
             <span className="sidebar-label">ADD ELEMENT</span>
@@ -680,7 +817,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                             : "text-icon"
                       }
                     >
-                      {type === "text" ? "T" : ""}
+                      {type === "text" ? <Type size={19} strokeWidth={1.8} /> : type === "circle" ? <Circle size={18} strokeWidth={1.8} /> : <Square size={18} strokeWidth={1.8} />}
                     </span>
                     <small>{type[0].toUpperCase() + type.slice(1)}</small>
                   </button>
@@ -691,7 +828,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                   className="line-tool-button"
                   onClick={() => addElement("line")}
                 >
-                  <span className="line-tool-icon">╱</span>
+                  <span className="line-tool-icon"><Slash size={19} strokeWidth={1.8} /></span>
                   <small>Line</small>
                 </button>
                 <button
@@ -699,7 +836,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                   aria-label="Choose line style"
                   onClick={() => setLineMenuOpen((open) => !open)}
                 >
-                  ⌄
+                  <ChevronDown size={15} strokeWidth={1.8} />
                 </button>
                 {lineMenuOpen && (
                   <div className="line-style-menu">
@@ -709,7 +846,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                         title={option.label}
                         onClick={() => addElement("line", option.style)}
                       >
-                        <span>{option.icon}</span>
+                        <option.icon size={18} strokeWidth={1.8} />
                       </button>
                     ))}
                   </div>
@@ -720,13 +857,13 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
           <section className="sidebar-section layer-section">
             <span className="sidebar-label">LAYER ACTIONS</span>
             <button disabled={!selectedIds.length} onClick={() => reorder(1)}>
-              ◇ <span>Bring Forward</span>
+              <BringToFront size={17} strokeWidth={1.8} /> <span>Bring Forward</span>
             </button>
             <button disabled={!selectedIds.length} onClick={() => reorder(-1)}>
-              ♧ <span>Send Backward</span>
+              <SendToBack size={17} strokeWidth={1.8} /> <span>Send Backward</span>
             </button>
             <button disabled={!selectedIds.length} onClick={removeSelected}>
-              ♧ <span>Delete</span>
+              <Trash2 size={17} strokeWidth={1.8} /> <span>Delete</span>
             </button>
           </section>
           {loading && <p className="muted">Loading canvases…</p>}
@@ -756,6 +893,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                   <span className="eyebrow">Canvas / {activeCanvas.name}</span>
                   <div className="canvas-title-row">
                     <input
+                      ref={canvasTitleRef}
                       className="canvas-title-input"
                       value={activeCanvas.name}
                       onChange={(event) =>
@@ -765,14 +903,25 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                         }))
                       }
                     />
-                    <span className="title-edit-icon">✎</span>
+                    <button
+                      className="title-edit-icon"
+                      type="button"
+                      aria-label="Edit canvas name"
+                      title="Edit canvas name"
+                      onClick={() => {
+                        canvasTitleRef.current?.focus();
+                        canvasTitleRef.current?.select();
+                      }}
+                    >
+                      <Pencil size={14} strokeWidth={1.8} />
+                    </button>
                   </div>
                   <small>
                     {activeCanvas.width} × {activeCanvas.height}
                   </small>
                 </div>
                 <div className="canvas-size">
-                  {Math.round(zoom * 100)}% <span>⌄</span>
+                  {Math.round(zoom * 100)}% <ChevronDown size={14} strokeWidth={1.8} />
                 </div>
               </div>
               <div className="stage-wrap">
@@ -830,7 +979,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                 </div>
               </div>
               <div className="hint">
-                <span>⌘</span> Select an element to transform it{" "}
+                <span><Command size={14} strokeWidth={1.8} /></span> Select an element to transform it{" "}
                 <span className="hint-divider" /> Drag to move · Corner handles
                 to resize · Top handle to rotate
               </div>
@@ -862,7 +1011,7 @@ export default function Editor({ canvasId }: { canvasId?: string } = {}) {
                   className="canvas-preview add-preview"
                   onClick={newCanvas}
                 >
-                  ＋<small>New Canvas</small>
+                  <Plus size={18} strokeWidth={2} /><small>New Canvas</small>
                 </button>
               </div>
             </>
