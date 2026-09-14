@@ -1,35 +1,54 @@
 import { decode } from "@auth/core/jwt";
 import { User } from "../models/User.js";
 
-function sessionCookie(req) {
-  const cookies = (req.headers.cookie || "")
+function getSessionCookie(req) {
+  const rawCookie = req.headers.cookie || "";
+
+  const cookies = rawCookie
     .split(";")
-    .map((cookie) => cookie.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 
-  for (const name of [
-    "authjs.session-token",
+  const cookieNames = [
     "__Secure-authjs.session-token",
-  ]) {
+    "authjs.session-token",
+  ];
+
+  for (const baseName of cookieNames) {
     const chunks = cookies
-      .map((cookie) => cookie.split("=", 2))
-      .filter(
-        ([cookieName]) =>
-          cookieName === name || cookieName.startsWith(`${name}.`),
-      )
-      .sort(([left], [right]) => {
-        const leftIndex =
-          left === name ? 0 : Number(left.slice(name.length + 1));
+      .map((cookie) => {
+        const separator = cookie.indexOf("=");
+        if (separator === -1) return null;
 
-        const rightIndex =
-          right === name ? 0 : Number(right.slice(name.length + 1));
-
-        return leftIndex - rightIndex;
+        return {
+          name: cookie.slice(0, separator),
+          value: cookie.slice(separator + 1),
+        };
       })
-      .map(([, value]) => value);
+      .filter(Boolean)
+      .filter(
+        (cookie) =>
+          cookie.name === baseName ||
+          cookie.name.startsWith(`${baseName}.`),
+      )
+      .sort((a, b) => {
+        const getIndex = (name) => {
+          if (name === baseName) return 0;
+
+          const suffix = name.slice(baseName.length + 1);
+          const index = Number(suffix);
+
+          return Number.isFinite(index) ? index + 1 : 999999;
+        };
+
+        return getIndex(a.name) - getIndex(b.name);
+      });
 
     if (chunks.length) {
-      return decodeURIComponent(chunks.join(""));
+      return {
+        token: chunks.map((chunk) => decodeURIComponent(chunk.value)).join(""),
+        cookieName: baseName,
+      };
     }
   }
 
@@ -38,40 +57,41 @@ function sessionCookie(req) {
 
 export async function requireAuth(req, res, next) {
   try {
-    const token = sessionCookie(req);
+    const sessionCookie = getSessionCookie(req);
 
     const secret =
       process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 
-    console.log("AUTH DEBUG:", {
-      hasCookie: !!token,
-      cookieLength: token?.length,
-      hasSecret: !!secret,
-      secretLength: secret?.length,
-    });
-
-    if (!token) {
-      throw new Error("Session cookie not found");
+    if (!sessionCookie) {
+      console.log("AUTH: No Auth.js session cookie");
+      return res.status(401).json({
+        error: "Authentication required",
+      });
     }
 
     if (!secret) {
-      throw new Error("AUTH_SECRET not configured");
+      console.error("AUTH: AUTH_SECRET is missing");
+      return res.status(500).json({
+        error: "Authentication configuration error",
+      });
     }
 
-    const cookieName = cookiesName(req);
-
-    console.log("AUTH DEBUG cookie name:", cookieName);
+    console.log(
+      "AUTH: Session cookie received:",
+      sessionCookie.cookieName,
+    );
 
     const session = await decode({
-      token,
+      token: sessionCookie.token,
       secret,
-      salt: cookieName,
+      salt: sessionCookie.cookieName,
     });
 
-    console.log("AUTH DEBUG session:", session);
-
     if (!session?.sub) {
-      throw new Error("Session has no user ID");
+      console.log("AUTH: Cookie decoded but no user id");
+      return res.status(401).json({
+        error: "Authentication required",
+      });
     }
 
     req.user = await User.findByIdAndUpdate(
@@ -105,22 +125,6 @@ export async function requireAuth(req, res, next) {
 
     return res.status(401).json({
       error: "Authentication required",
-      details: error instanceof Error ? error.message : String(error),
     });
   }
-}
-
-function cookiesName(req) {
-  const cookieHeader = req.headers.cookie || "";
-
-  return cookieHeader
-    .split(";")
-    .map((cookie) => cookie.trim())
-    .some(
-      (cookie) =>
-        cookie.startsWith("__Secure-authjs.session-token=") ||
-        cookie.startsWith("__Secure-authjs.session-token."),
-    )
-    ? "__Secure-authjs.session-token"
-    : "authjs.session-token";
 }
