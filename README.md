@@ -509,6 +509,3 @@ Either set `BACKEND_API_URL=http://localhost:4000` for the Next.js proxy or set 
 
 Set `PORT` to another backend port and update `NEXT_PUBLIC_API_URL`, `BACKEND_API_URL`, and `CLIENT_ORIGIN` to match.
 
-## License
-
-No license has been specified for this repository yet. Add a license file before distributing the project publicly.
