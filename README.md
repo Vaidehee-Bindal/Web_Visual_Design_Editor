@@ -4,6 +4,9 @@ SketchStack is a full-stack visual design editor for creating, editing, saving, 
 
 The project demonstrates a maintainable separation between a browser-based scene editor and a REST API that owns persistence, validation, authentication, and canvas ownership.
 
+## Live Demo
+Try it here - https://web-visual-design-editor-qyjc.vercel.app/
+
 ## What We Built
 
 The editor supports:
