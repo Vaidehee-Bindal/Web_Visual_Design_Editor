@@ -35,7 +35,7 @@ export type CanvasDocument = {
   createdAt?: string;
   deletedAt?: string | null;
 };
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "/api/backend";
 export class ApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
 }
